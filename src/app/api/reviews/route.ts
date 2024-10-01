@@ -33,6 +33,19 @@ export async function POST(request: Request) {
         comments,
       },
     });
+
+    // Step 2: Calculate the new average rating
+    const { _avg } = await prisma.review.aggregate({
+      where: { movieId: Number(movieId) },
+      _avg: { rating: true },
+    });
+
+    // Step 3: Update the movie with the new average rating
+    await prisma.movie.update({
+      where: { id: Number(movieId) },
+      data: { averageRating: _avg.rating || 0 },
+    });
+
     return NextResponse.json(newReview, { status: 201 });
   } catch (error) {
     console.error('Failed to create review":', error);
@@ -52,6 +65,20 @@ export async function PUT(request: Request) {
         rating,
         comments,
       },
+    });
+    // Step 2: Get the movieId from the updated review
+    const movieId = updatedReview.movieId;
+
+    // Step 3: Recalculate the new average rating
+    const { _avg } = await prisma.review.aggregate({
+      where: { movieId },
+      _avg: { rating: true },
+    });
+
+    // Step 4: Update the movie with the new average rating
+    await prisma.movie.update({
+      where: { id: movieId },
+      data: { averageRating: _avg.rating || 0 },
     });
 
     return NextResponse.json(updatedReview, { status: 200 });
